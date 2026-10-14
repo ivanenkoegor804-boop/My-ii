@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VÆRIX AI</title>
+<style>
+:root {
+  --bg: #07070a;
+  --glass: rgba(255,255,255,0.055);
+  --glass2: rgba(255,255,255,0.09);
+  --glass-border: rgba(255,255,255,0.11);
+  --glass-border-strong: rgba(255,255,255,0.2);
+  --tx: #f2f0e9;
+  --mu: #9b988f;
+  --ac: #c9a87c;
+  --ac2: #e4cba6;
+  --acx: #0a0a0c;
+  --ok: #5ecf8a;
+  --err: #e06c75;
+  --blur: 28px;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.45);
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--tx);
+  font: 15px/1.55 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 55% at 15% 8%, rgba(201,168,124,0.16) 0%, transparent 50%),
+    radial-gradient(ellipse 55% 45% at 85% 85%, rgba(90,130,210,0.11) 0%, transparent 50%),
+    radial-gradient(ellipse 45% 35% at 50% 45%, rgba(160,90,150,0.07) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+  animation: liquid 20s ease-in-out infinite alternate;
+}
+@keyframes liquid {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.88; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+header {
+  position: relative; z-index: 10;
+  padding: 14px 20px 11px;
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(7,7,10,0.7);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border-bottom: 1px solid var(--glass-border);
+}
+.logo {
+  width: 38px; height: 38px; border-radius: 12px;
+  background: linear-gradient(135deg, #c9a87c, #a67c52);
+  color: var(--acx);
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 15px; letter-spacing: -0.03em;
+  box-shadow: 0 4px 18px rgba(201,168,124,0.35);
+}
+header b {
+  font-size: 18px; font-weight: 700; letter-spacing: -0.03em;
+  background: linear-gradient(90deg, #f2f0e9, #e4cba6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+header span { color: var(--mu); font-size: 12px; display: block; margin-top: 1px; }
+.conn-status {
+  margin-left: auto; display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--mu);
+  padding: 6px 13px; border-radius: 20px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+}
+.conn-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mu); transition: .3s; }
+.conn-status.online .dot { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+.conn-status.online { color: var(--ok); }
+#views { flex: 1; min-height: 0; position: relative; z-index: 5; }
+.view {
+  display: none; position: absolute; inset: 0;
+  overflow-y: auto; padding: 8px 16px 20px;
+  max-width: 820px; margin: 0 auto; width: 100%;
+}
+.view.on { display: block; }
+#v-chat.on { display: flex; flex-direction: column; overflow: hidden; max-width: 820px; }
+nav {
+  position: relative; z-index: 10; display: flex;
+  background: rgba(7,7,10,0.78);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border-top: 1px solid var(--glass-border);
+  padding: 4px 4px 7px;
+}
+nav button {
+  flex: 1; border: 0; background: none; color: var(--mu);
+  padding: 8px 0 6px; font: inherit; font-size: 10.5px; cursor: pointer;
+  position: relative; border-radius: 12px; transition: .2s;
+}
+nav button i { display: block; font-style: normal; font-size: 19px; line-height: 1.25; }
+nav button.on { color: var(--ac); font-weight: 600; background: var(--glass2); }
+nav button:hover:not(.on) { color: var(--tx); background: var(--glass); }
+.badge {
+  position: absolute; top: 3px; left: 56%;
+  background: var(--ac); color: var(--acx);
+  border-radius: 9px; font-size: 10px; padding: 0 5px; line-height: 15px; font-weight: 700;
+}
+.chips {
+  display: flex; gap: 7px; overflow-x: auto; padding: 4px 0 10px;
+  flex: none; scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; border: 1px solid var(--glass-border);
+  background: var(--glass); color: var(--tx);
+  border-radius: 18px; padding: 7px 14px;
+  font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap;
+  backdrop-filter: blur(12px); transition: .2s;
+}
+.chip:hover { background: var(--glass2); border-color: var(--glass-border-strong); }
+.chip.on {
+  background: linear-gradient(135deg, rgba(201,168,124,0.22), rgba(201,168,124,0.1));
+  color: var(--ac2); border-color: rgba(201,168,124,0.4);
+  box-shadow: 0 0 20px rgba(201,168,124,0.12);
+}
+#log {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; padding: 4px 0 8px;
+}
+.empty { margin: auto; text-align: center; color: var(--mu); padding: 20px 12px; }
+.empty h2 { color: var(--tx); font-size: 21px; font-weight: 650; margin: 0 0 6px; letter-spacing: -0.02em; }
+.empty p { font-size: 14px; margin-bottom: 14px; max-width: 380px; margin-left: auto; margin-right: auto; }
+.empty .chip { display: block; margin: 7px auto; white-space: normal; max-width: 340px; text-align: left; }
+.msg {
+  padding: 11px 15px; border-radius: 16px; max-width: 92%;
+  white-space: pre-wrap; word-wrap: break-word; font-size: 14.5px; line-height: 1.5;
+}
+.msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(201,168,124,0.88), rgba(166,124,82,0.92));
+  color: var(--acx); border-bottom-right-radius: 5px;
+  box-shadow: 0 4px 16px rgba(201,168,124,0.25);
+}
+.msg.ai {
+  align-self: flex-start;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom-left-radius: 5px; box-shadow: var(--shadow);
+}
+.msg.err {
+  align-self: center; color: var(--mu); font-size: 13px;
+  padding: 5px 12px; background: rgba(224,108,117,0.1); border-radius: 10px;
+}
+.composer {
+  flex: none; display: flex; gap: 10px; align-items: flex-end; padding-top: 10px;
+}
+.composer textarea {
+  flex: 1; min-height: 48px; max-height: 150px;
+  padding: 12px 16px; border: 1px solid var(--glass-border);
+  border-radius: 16px; background: var(--glass); color: var(--tx);
+  font: inherit; font-size: 14.5px; resize: none;
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); transition: border-color .2s;
+}
+.composer textarea:focus {
+  outline: none; border-color: rgba(201,168,124,0.5);
+  box-shadow: 0 0 0 3px rgba(201,168,124,0.12);
+}
+.composer textarea::placeholder { color: var(--mu); }
+.send {
+  width: 48px; height: 48px; border-radius: 50%; border: 0;
+  background: linear-gradient(135deg, #c9a87c, #a67c52);
+  color: var(--acx); font-size: 18px; cursor: pointer; flex: none;
+  box-shadow: 0 4px 18px rgba(201,168,124,0.35);
+  transition: transform .15s, box-shadow .15s;
+}
+.send:hover { transform: scale(1.05); box-shadow: 0 6px 24px rgba(201,168,124,0.45); }
+.send:active { transform: scale(0.97); }
+.card {
+  background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: var(--radius); padding: 16px; margin: 10px 0;
+  backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur));
+  box-shadow: var(--shadow);
+}
+label {
+  display: block; font-size: 12px; color: var(--mu);
+  margin: 12px 0 5px; font-weight: 500; letter-spacing: 0.02em;
+}
+label:first-child { margin-top: 0; }
+input, select, textarea {
+  width: 100%; padding: 11px 13px;
+  border: 1px solid var(--glass-border); border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.28); color: var(--tx);
+  font: inherit; font-size: 14px; transition: border-color .2s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: rgba(201,168,124,0.45);
+}
+textarea { resize: vertical; font-family: inherit; }
+.mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 13px; min-height: 80px; }
+.btn {
+  padding: 9px 16px; border: 1px solid var(--glass-border);
+  background: var(--glass); color: var(--tx);
+  border-radius: 11px; font: inherit; font-size: 13px; cursor: pointer;
+  transition: .2s; backdrop-filter: blur(8px);
+}
+.btn:hover { background: var(--glass2); border-color: var(--glass-border-strong); }
+.btn.p {
+  background: linear-gradient(135deg, #c9a87c, #a67c52);
+  color: var(--acx); border-color: transparent; font-weight: 600;
+  box-shadow: 0 4px 14px rgba(201,168,124,0.3);
+}
+.btn.p:hover { box-shadow: 0 6px 20px rgba(201,168,124,0.4); transform: translateY(-1px); }
+.btn.danger { border-color: rgba(224,108,117,0.4); color: var(--err); }
+.row {
+  display: flex; gap: 10px; align-items: center;
+  justify-content: space-between; margin-top: 12px; flex-wrap: wrap;
+}
+h3 {
+  font-size: 12px; color: var(--mu); margin: 20px 0 8px;
+  text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+}
+.file {
+  align-self: flex-start; display: flex; gap: 12px; align-items: center;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 14px; padding: 11px 14px; max-width: 92%;
+  backdrop-filter: blur(16px); box-shadow: var(--shadow);
+}
+.file .ic { font-size: 24px; }
+.file .nm { font-weight: 600; font-size: 14px; word-break: break-all; }
+.file small { color: var(--mu); display: block; font-size: 12px; margin-top: 2px; }
+.file .acts { display: flex; gap: 7px; margin-left: auto; }
+.cfg { width: 100%; max-width: none; }
+pre {
+  background: rgba(0,0,0,0.35); border-radius: 10px; padding: 10px 12px;
+  margin: 8px 0 0; overflow-x: auto; font-size: 12px; max-height: 200px;
+  border: 1px solid var(--glass-border);
+}
+.hint { color: var(--mu); font-size: 12.5px; margin: 6px 2px 12px; line-height: 1.45; }
+.conn-card { text-align: center; padding: 28px 20px; }
+.conn-card .icon-big { font-size: 48px; margin-bottom: 12px; filter: drop-shadow(0 4px 12px rgba(201,168,124,0.3)); }
+.conn-card h2 { font-size: 20px; font-weight: 650; margin-bottom: 8px; letter-spacing: -0.02em; }
+.status-line { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 16px 0; font-size: 14px; }
+.status-line .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mu); }
+.status-line.online .dot { background: var(--ok); box-shadow: 0 0 12px var(--ok); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+.path-box { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+.path-box input { flex: 1; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; }
+.build-log {
+  background: rgba(0,0,0,0.4); border-radius: 12px; padding: 12px 14px;
+  font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12.5px;
+  max-height: 220px; overflow-y: auto; border: 1px solid var(--glass-border);
+  color: #c8c6be; line-height: 1.5;
+}
+.build-log .ok { color: var(--ok); }
+.build-log .err { color: var(--err); }
+.build-log .info { color: var(--ac); }
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--glass-border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle {
+  width: 44px; height: 26px; border-radius: 13px;
+  background: rgba(255,255,255,0.12); position: relative; cursor: pointer;
+  transition: background .25s; border: 1px solid var(--glass-border);
+}
+.toggle.on { background: linear-gradient(135deg, #c9a87c, #a67c52); border-color: transparent; }
+.toggle::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%; background: #fff;
+  transition: transform .25s; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.toggle.on::after { transform: translateX(18px); }
+.feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+.feat {
+  background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 14px; padding: 14px; backdrop-filter: blur(12px);
+}
+.feat .f-icon { font-size: 22px; margin-bottom: 6px; }
+.feat .f-title { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+.feat .f-desc { font-size: 12px; color: var(--mu); line-height: 1.4; }
+.provider-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 14px;
+}
+.prov {
+  text-align: center; padding: 14px 8px; border-radius: 14px;
+  border: 1px solid var(--glass-border); background: var(--glass);
+  cursor: pointer; transition: .2s; font-size: 13px;
+}
+.prov:hover { background: var(--glass2); }
+.prov.on {
+  border-color: rgba(201,168,124,0.5);
+  background: linear-gradient(135deg, rgba(201,168,124,0.18), rgba(201,168,124,0.08));
+  box-shadow: 0 0 18px rgba(201,168,124,0.12);
+}
+.prov .p-icon { font-size: 22px; margin-bottom: 4px; }
+.prov .p-name { font-weight: 600; }
+.prov .p-sub { font-size: 11px; color: var(--mu); margin-top: 2px; }
+.prov.free-badge .p-sub { color: var(--ok); }
+.key-wrap { position: relative; }
+.key-wrap input { padding-right: 70px; }
+.key-wrap .show-key {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; color: var(--mu); cursor: pointer; border: 0; background: none;
+}
+.free-banner {
+  background: linear-gradient(135deg, rgba(94,207,138,0.12), rgba(94,207,138,0.05));
+  border: 1px solid rgba(94,207,138,0.25);
+  border-radius: 14px; padding: 14px 16px; margin-bottom: 12px;
+  font-size: 13.5px; line-height: 1.45;
+}
+.free-banner strong { color: var(--ok); }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">VÆ</div>
+  <div>
+    <b>VÆRIX AI</b>
+    <span>AI-студия разработки игр</span>
+  </div>
+  <div class="conn-status" id="hdr-conn">
+    <span class="dot"></span>
+    <span id="hdr-conn-text">Не подключено</span>
+  </div>
+</header>
+
+<div id="views">
+  <section class="view on" id="v-chat">
+    <div class="chips" id="chips"></div>
+    <div id="log"></div>
+    <div class="composer">
+      <textarea id="msg" rows="1" placeholder="Опишите игру или дайте задание…"></textarea>
+      <button class="send" id="send" title="Отправить">➤</button>
+    </div>
+  </section>
+
+  <section class="view" id="v-conn">
+    <div class="card conn-card">
+      <div class="icon-big">💻</div>
+      <h2>Подключение к компьютеру</h2>
+      <p class="hint" style="max-width:360px;margin:0 auto 8px">
+        Установите программу-помощник на ПК. Подключение работает только после вашего разрешения.
+      </p>
+      <div class="status-line" id="conn-status-line">
+        <span class="dot"></span>
+        <span id="conn-status-text">Ожидание подключения…</span>
+      </div>
+      <div class="row" style="justify-content:center;margin-top:18px">
+        <button class="btn p" id="btn-connect">Подключить компьютер</button>
+        <button class="btn" id="btn-disconnect" style="display:none">Отключить</button>
+      </div>
+    </div>
+    <div class="card" id="project-card" style="display:none">
+      <label>Папка проекта</label>
+      <div class="path-box">
+        <input id="project-path" type="text" readonly value="C:\Games\MyGame" placeholder="Выберите папку…">
+        <button class="btn" id="btn-browse">Обзор</button>
+      </div>
+      <p class="hint">ИИ будет создавать и изменять файлы только внутри этой папки.</p>
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:600;font-size:14px">Автономный режим</div>
+          <div style="font-size:12px;color:var(--mu)">ИИ продолжает работу без подтверждения безопасных действий</div>
+        </div>
+        <div class="toggle" id="toggle-auto"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:600;font-size:14px">Подтверждать опасные команды</div>
+          <div style="font-size:12px;color:var(--mu)">rm, format, удаление папок и т.д.</div>
+        </div>
+        <div class="toggle on" id="toggle-safe"></div>
+      </div>
+    </div>
+    <div class="feat-grid">
+      <div class="feat"><div class="f-icon">📁</div><div class="f-title">Файлы и папки</div><div class="f-desc">Структура проекта, скрипты, ассеты-заглушки</div></div>
+      <div class="feat"><div class="f-icon">⚙️</div><div class="f-title">Сборка и запуск</div><div class="f-desc">Разрешённые команды и анализ ошибок</div></div>
+      <div class="feat"><div class="f-icon">🎮</div><div class="f-title">Игровые механики</div><div class="f-desc">Инвентарь, квесты, уровни, AI, UI</div></div>
+      <div class="feat"><div class="f-icon">🔒</div><div class="f-title">Безопасность</div><div class="f-desc">Разрешения, подтверждения, изоляция папки</div></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-agents">
+    <div id="agents"></div>
+    <button class="btn p" id="add" style="width:100%;margin-top:8px">+ Новый агент</button>
+  </section>
+
+  <section class="view" id="v-build">
+    <div class="card">
+      <h3 style="margin-top:0">Команды и сборка</h3>
+      <p class="hint">ИИ может запускать разрешённые команды на вашем ПК после подключения.</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn p" id="btn-build">▶ Собрать проект</button>
+        <button class="btn" id="btn-run">Запустить</button>
+        <button class="btn" id="btn-test">Тесты</button>
+      </div>
+      <div class="build-log" id="build-log" style="margin-top:14px">
+        <div class="info">// Лог сборки появится здесь после подключения</div>
+      </div>
+    </div>
+    <div class="card">
+      <label>Разрешённые команды</label>
+      <textarea class="mono" id="allow">Bash(dotnet build:*)
+Bash(unity -batchmode:*)
+Bash(godot --headless:*)
+Bash(npm run:*)
+Bash(git *:*)
+Read(**)
+Write(**)</textarea>
+      <label>Запрещено</label>
+      <textarea class="mono" id="deny">Bash(rm -rf:*)
+Bash(format:*)
+Bash(del /s:*)
+Read(./.env)
+Read(**/credentials*)</textarea>
+    </div>
+  </section>
+
+  <section class="view" id="v-set">
+    <div class="card">
+      <div class="free-banner" id="free-banner">
+        <strong>Бесплатный режим активен</strong><br>
+        Работает без API-ключей. Генерирует планы, код, структуры проектов и файлы прямо в браузере.
+      </div>
+
+      <label>Провайдер ИИ</label>
+      <div class="provider-grid" id="prov-grid">
+        <div class="prov on free-badge" data-p="local">
+          <div class="p-icon">◇</div>
+          <div class="p-name">Локальный</div>
+          <div class="p-sub">Бесплатно · без ключа</div>
+        </div>
+        <div class="prov" data-p="xai">
+          <div class="p-icon">✦</div>
+          <div class="p-name">Grok</div>
+          <div class="p-sub">xAI</div>
+        </div>
+        <div class="prov" data-p="anthropic">
+          <div class="p-icon">◈</div>
+          <div class="p-name">Claude</div>
+          <div class="p-sub">Anthropic</div>
+        </div>
+        <div class="prov" data-p="openai">
+          <div class="p-icon">◎</div>
+          <div class="p-name">ChatGPT</div>
+          <div class="p-sub">OpenAI</div>
+        </div>
+      </div>
+
+      <div id="api-settings">
+        <label>Модель</label>
+        <select id="model"></select>
+        <label>API-ключ <span id="key-label" style="color:var(--mu);font-weight:400"></span></label>
+        <div class="key-wrap">
+          <input type="password" id="apikey" placeholder="Вставьте API-ключ…" autocomplete="off">
+          <button class="show-key" id="toggle-key">показать</button>
+        </div>
+        <p class="hint">Ключ хранится только в вашем браузере (localStorage).</p>
+      </div>
+
+      <label style="margin-top:16px">Системный промпт (опционально)</label>
+      <textarea class="mono" id="sysprompt" rows="3" placeholder="Ты — помощник по разработке игр…"></textarea>
+    </div>
+    <div class="card">
+      <label>Переменные окружения (KEY=value)</label>
+      <textarea class="mono" id="env" placeholder="UNITY_PATH=C:\Program Files\Unity\..."></textarea>
+    </div>
+  </section>
+
+  <section class="view" id="v-files">
+    <div id="fl"></div>
+  </section>
+</div>
+
+<nav id="nav">
+  <button data-v="chat" class="on"><i>💬</i>Чат</button>
+  <button data-v="conn"><i>💻</i>ПК</button>
+  <button data-v="agents"><i>🤖</i>Агенты</button>
+  <button data-v="build"><i>⚙️</i>Сборка</button>
+  <button data-v="set"><i>🔑</i>API</button>
+  <button data-v="files"><i>📁</i>Файлы<span class="badge" id="bd" hidden>0</span></button>
+</nav>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const PROVIDERS = {
+  local: {
+    name: "Локальный",
+    keyLabel: "",
+    models: [["local-engine", "VÆRIX Engine"]],
+    free: true
+  },
+  xai: {
+    name: "Grok",
+    keyLabel: "(xAI)",
+    endpoint: "https://api.x.ai/v1/chat/completions",
+    models: [["grok-4","Grok 4"],["grok-3","Grok 3"],["grok-3-mini","Grok 3 Mini"]],
+    headers: key => ({ "Content-Type": "application/json", "Authorization": "Bearer " + key }),
+    body: (model, messages, system) => {
+      const msgs = system ? [{role:"system", content:system}, ...messages] : messages;
+      return { model, messages: msgs, stream: true, temperature: 0.7 };
+    }
+  },
+  anthropic: {
+    name: "Claude",
+    keyLabel: "(Anthropic)",
+    endpoint: "https://api.anthropic.com/v1/messages",
+    models: [["claude-opus-4-20250514","Opus 4"],["claude-sonnet-4-20250514","Sonnet 4"],["claude-3-5-haiku-20241022","Haiku 3.5"]],
+    headers: key => ({
+      "Content-Type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    }),
+    body: (model, messages, system) => ({
+      model, max_tokens: 8192,
+      system: system || undefined,
+      messages: messages.filter(m => m.role !== "system"),
+      stream: true
+    })
+  },
+  openai: {
+    name: "ChatGPT",
+    keyLabel: "(OpenAI)",
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    models: [["gpt-4o","GPT-4o"],["gpt-4o-mini","GPT-4o Mini"],["o3-mini","o3-mini"]],
+    headers: key => ({ "Content-Type": "application/json", "Authorization": "Bearer " + key }),
+    body: (model, messages, system) => {
+      const msgs = system ? [{role:"system", content:system}, ...messages] : messages;
+      return { model, messages: msgs, stream: true, temperature: 0.7 };
+    }
+  }
+};
+
+let provider = localStorage.getItem("vaerix-provider") || "local";
+let apiKeys = JSON.parse(localStorage.getItem("vaerix-keys") || "{}");
+let selectedModel = localStorage.getItem("vaerix-model") || "local-engine";
+
+let agents = [
+  { name: "game-architect", description: "Проектирует архитектуру игры, механики и структуру проекта", model: "inherit", tools: "Read, Write, Glob, Grep", prompt: "Ты ведущий геймдизайнер и архитектор. Создавай чёткие планы механик, структуру папок, список систем." },
+  { name: "code-implementer", description: "Пишет код игровых систем и скриптов", model: "inherit", tools: "Read, Write, Bash, Grep, Glob", prompt: "Ты senior-разработчик игр. Пиши чистый, модульный код." },
+  { name: "qa-tester", description: "Находит баги и предлагает фиксы", model: "inherit", tools: "Bash, Read, Grep", prompt: "Ты QA-инженер. Анализируй ошибки и предлагай конкретные исправления." }
+];
+
+let files = [], hist = [], target = "m:default", ctl = null;
+let connected = false, autoMode = false, safeMode = true;
+
+const HISTORY_KEY = "vaerix-history-v1";
+let conversations = {};
+try { conversations = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}"); } catch(e) {}
+
+function saveHistory() {
+  try {
+    conversations[target] = hist;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(conversations));
+  } catch(e) { bubble("err", "Не удалось сохранить историю."); }
+}
+function loadHistory() {
+  hist = Array.isArray(conversations[target]) ? conversations[target] : [];
+  renderChips();
+  renderHistory();
+}
+function renderHistory() {
+  const log = $("log");
+  log.innerHTML = "";
+  if (!hist.length) { renderEmpty(); return; }
+  for (const m of hist) {
+    bubble(m.role === "user" ? "user" : "ai", typeof m.content === "string" ? m.content : "[Сообщение]");
+  }
+}
+
+function show(v) {
+  document.querySelectorAll(".view").forEach(e => e.classList.toggle("on", e.id === "v-" + v));
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+  if (v === "files") renderFiles();
+  if (v === "chat") renderChips();
+  if (v === "agents") renderAgents();
+  if (v === "set") refreshSettingsUI();
+}
+$("nav").onclick = e => {
+  const b = e.target.closest("button");
+  if (b) show(b.dataset.v);
+};
+
+function refreshSettingsUI() {
+  document.querySelectorAll(".prov").forEach(p => p.classList.toggle("on", p.dataset.p === provider));
+  const isLocal = provider === "local";
+  $("free-banner").style.display = isLocal ? "block" : "none";
+  $("api-settings").style.display = isLocal ? "none" : "block";
+  if (!isLocal) {
+    const prov = PROVIDERS[provider];
+    $("model").innerHTML = prov.models.map(m =>
+      `<option value="${m[0]}" ${m[0] === selectedModel ? "selected" : ""}>${m[1]}</option>`
+    ).join("");
+    if (!selectedModel || !prov.models.find(m => m[0] === selectedModel)) {
+      selectedModel = prov.models[0][0];
+      $("model").value = selectedModel;
+    }
+    $("key-label").textContent = prov.keyLabel;
+    $("apikey").value = apiKeys[provider] || "";
+    $("apikey").type = "password";
+    $("toggle-key").textContent = "показать";
+  }
+}
+
+$("prov-grid").onclick = e => {
+  const p = e.target.closest(".prov");
+  if (!p) return;
+  provider = p.dataset.p;
+  localStorage.setItem("vaerix-provider", provider);
+  selectedModel = PROVIDERS[provider].models[0][0];
+  localStorage.setItem("vaerix-model", selectedModel);
+  refreshSettingsUI();
+  renderChips();
+};
+
+$("model").onchange = () => {
+  selectedModel = $("model").value;
+  localStorage.setItem("vaerix-model", selectedModel);
+  renderChips();
+};
+
+$("apikey").oninput = () => {
+  apiKeys[provider] = $("apikey").value.trim();
+  localStorage.setItem("vaerix-keys", JSON.stringify(apiKeys));
+};
+
+$("toggle-key").onclick = () => {
+  const inp = $("apikey");
+  if (inp.type === "password") { inp.type = "text"; $("toggle-key").textContent = "скрыть"; }
+  else { inp.type = "password"; $("toggle-key").textContent = "показать"; }
+};
+
+const lines = id => $(id).value.split("\n").map(s => s.trim()).filter(Boolean);
+
+function settingsJson() {
+  return JSON.stringify({
+    provider, model: selectedModel,
+    permissions: { allow: lines("allow"), deny: lines("deny") },
+    connection: { enabled: connected, autoMode, safeMode, projectPath: $("project-path").value || null },
+    systemPrompt: $("sysprompt").value.trim() || null
+  }, null, 2);
+}
+
+function agentMd(a) {
+  let h = "---\nname: " + a.name + "\ndescription: " + a.description + "\n";
+  if (a.tools.trim()) h += "tools: " + a.tools.trim() + "\n";
+  if (a.model !== "inherit") h += "model: " + a.model + "\n";
+  return h + "---\n\n" + a.prompt + "\n";
+}
+
+async function copy(t, b) {
+  try {
+    await navigator.clipboard.writeText(t);
+    if (b) { b.textContent = "Скопировано ✓"; setTimeout(() => b.textContent = "Копировать", 1500); }
+  } catch(e) {}
+}
+
+function download(name, content) {
+  let fn = name.split("/").pop();
+  if (!/\.(txt|json|md|csv|html|svg|cs|js|ts|py|gd)$/i.test(fn)) fn += ".txt";
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = fn; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function fileCard(name, content, path) {
+  const d = document.createElement("div");
+  d.className = "file";
+  d.innerHTML = `<span class="ic">📄</span><div><div class="nm">${esc(path || name)}</div><small>${content.length} симв.</small></div><div class="acts"><button class="btn" data-c>Копировать</button><button class="btn p" data-d>Скачать</button></div>`;
+  d.querySelector("[data-c]").onclick = e => copy(content, e.target);
+  d.querySelector("[data-d]").onclick = () => download(name, content);
+  return d;
+}
+
+function addFile(name, content) {
+  name = name.split("/").pop();
+  files.push({ name, content });
+  const em = $("log").querySelector(".empty");
+  if (em) em.remove();
+  const c = fileCard(name, content);
+  $("log").appendChild(c);
+  c.scrollIntoView({ block: "end" });
+  updBadge();
+}
+
+function updBadge() {
+  $("bd").hidden = !files.length;
+  $("bd").textContent = files.length;
+}
+
+function currentModelLabel() {
+  if (provider === "local") return "VÆRIX Engine";
+  const prov = PROVIDERS[provider];
+  const m = prov.models.find(x => x[0] === selectedModel);
+  return m ? m[1] : selectedModel;
+}
+
+function targetInfo() {
+  const [k, v] = target.split(":");
+  if (k === "a") {
+    const a = agents[+v];
+    if (a) return { label: a.name, model: a.model === "inherit" ? selectedModel : a.model, agent: a };
+  }
+  return { label: currentModelLabel(), model: selectedModel };
+}
+
+function renderChips() {
+  if (!targetInfo().label || (target[0] === "a" && !agents[+target.slice(2)])) target = "m:default";
+  if (provider === "local") {
+    $("chips").innerHTML =
+      `<button class="chip on" data-t="m:default">VÆRIX Engine</button>` +
+      agents.map((a, i) => `<button class="chip${target === "a:" + i ? " on" : ""}" data-t="a:${i}">🤖 ${esc(a.name)}</button>`).join("");
+  } else {
+    const prov = PROVIDERS[provider];
+    $("chips").innerHTML =
+      prov.models.map(m =>
+        `<button class="chip${target === "m:default" && m[0] === selectedModel ? " on" : ""}" data-t="m:default" data-model="${m[0]}">${m[1]}</button>`
+      ).join("") +
+      agents.map((a, i) => `<button class="chip${target === "a:" + i ? " on" : ""}" data-t="a:${i}">🤖 ${esc(a.name)}</button>`).join("");
+  }
+  if (!hist.length) renderEmpty();
+}
+
+$("chips").onclick = e => {
+  const b = e.target.closest(".chip");
+  if (!b) return;
+  if (b.dataset.model) {
+    selectedModel = b.dataset.model;
+    localStorage.setItem("vaerix-model", selectedModel);
+    if ($("model")) $("model").value = selectedModel;
+  }
+  if (b.dataset.t === target && !b.dataset.model) return;
+  target = b.dataset.t;
+  resetChat();
+};
+
+function renderEmpty() {
+  const t = targetInfo(), a = t.agent;
+  const freeNote = provider === "local" ? "Бесплатный режим · без API-ключа" : "";
+  $("log").innerHTML =
+    `<div class="empty"><h2>${a ? "🤖 " + esc(a.name) : esc(t.label)}</h2>
+    <p>${a ? esc(a.description) : "Опишите игру обычными словами. Можно создавать файлы, планы и код."}${freeNote ? "<br><span style='color:var(--ok);font-size:12px'>" + freeNote + "</span>" : ""}</p>` +
+    [
+      "Сделай игру в духе S.T.A.L.K.E.R. — план и структура",
+      "Создай систему инвентаря на C# (Unity)",
+      "Сделай простой платформер на Godot (GDScript)",
+      "Напиши README.md для игрового проекта",
+      "Создай систему квестов и диалогов"
+    ].map(s => `<button class="chip" data-s="${esc(s)}">${esc(s)}</button>`).join("") +
+    `</div>`;
+}
+
+$("log").onclick = e => {
+  const b = e.target.closest("[data-s]");
+  if (b) { $("msg").value = b.dataset.s; $("msg").focus(); }
+};
+
+function resetChat() {
+  if (ctl) ctl.abort();
+  loadHistory();
+}
+
+function bubble(cls, t) {
+  const em = $("log").querySelector(".empty");
+  if (em) em.remove();
+  const d = document.createElement("div");
+  d.className = "msg " + cls;
+  d.textContent = t;
+  $("log").appendChild(d);
+  d.scrollIntoView({ block: "end" });
+  return d;
+}
+
+/* ── LOCAL FREE ENGINE ──────────────────────────────── */
+const LocalEngine = (() => {
+  function detect(text) {
+    const t = text.toLowerCase();
+    return {
+      stalker: /сталкер|stalker|зона|мутант|артефакт|anomaly/i.test(t),
+      inventory: /инвентар|inventory|предмет|item|рюкзак/i.test(t),
+      quest: /квест|quest|задани|диалог|dialog|npc/i.test(t),
+      platformer: /платформер|platformer|прыж|jump|2d/i.test(t),
+      fps: /шутер|fps|first.?person|стрельб/i.test(t),
+      rpg: /rpg|ролев|прокачк|уровень|level.?up|stats/i.test(t),
+      unity: /unity|c#|csharp|монобех/i.test(t),
+      godot: /godot|gdscript|\bgd\b/i.test(t),
+      readme: /readme|читай|описани.?проект/i.test(t),
+      structure: /структур|папк|folder|архитектур|план|project.?structure/i.test(t),
+      save: /сохран|save.?system|load.?game/i.test(t)
+    };
+  }
+
+  function inventName(d) {
+    if (d.stalker) return "ZoneWalker";
+    if (d.platformer) return "SkyJumper";
+    if (d.fps) return "IronSight";
+    if (d.rpg) return "EchoQuest";
+    return "NovaGame";
+  }
+
+  function makeStructure(d, name) {
+    const engine = d.godot ? "Godot 4" : "Unity 6";
+    const ext = d.godot ? "gd" : "cs";
+    return `# Структура проекта «${name}»
+
+Движок: ${engine}
+
+\`\`\`
+${name}/
+├── Assets/ (или res://)
+│   ├── Scripts/
+│   │   ├── Core/
+│   │   │   ├── GameManager.${ext}
+│   │   │   ├── SaveSystem.${ext}
+│   │   │   └── EventBus.${ext}
+│   │   ├── Player/
+│   │   │   ├── PlayerController.${ext}
+│   │   │   └── PlayerStats.${ext}
+│   │   ├── Inventory/
+│   │   │   ├── InventorySystem.${ext}
+│   │   │   └── ItemData.${ext}
+│   │   ├── Quests/
+│   │   │   └── QuestManager.${ext}
+│   │   ├── AI/
+│   │   │   └── EnemyAI.${ext}
+│   │   └── UI/
+│   │       ├── HUD.${ext}
+│   │       └── InventoryUI.${ext}
+│   ├── Prefabs/
+│   ├── Scenes/
+│   │   ├── MainMenu
+│   │   └── GameWorld
+│   └── Art/
+├── Docs/
+│   ├── GDD.md
+│   └── README.md
+└── ProjectSettings/
+\`\`\`
+
+Следующие шаги:
+1. GameManager + базовый цикл
+2. PlayerController
+3. InventorySystem
+4. Тестовая сцена
+5. SaveSystem`;
+  }
+
+  function makeInventoryCS() {
+    return `// InventorySystem.cs — Unity
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+[System.Serializable]
+public class ItemData {
+    public string id;
+    public string displayName;
+    public string description;
+    public Sprite icon;
+    public int maxStack = 1;
+    public ItemType type;
+}
+
+public enum ItemType { Consumable, Weapon, Armor, Quest, Misc }
+
+public class InventorySystem : MonoBehaviour {
+    public static InventorySystem Instance { get; private set; }
+    [SerializeField] private int capacity = 24;
+    private Dictionary<string, int> items = new();
+    private Dictionary<string, ItemData> database = new();
+    public event Action OnInventoryChanged;
+
+    void Awake() {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    public void RegisterItem(ItemData data) => database[data.id] = data;
+
+    public bool AddItem(string id, int count = 1) {
+        if (!database.ContainsKey(id)) return false;
+        var data = database[id];
+        if (items.ContainsKey(id)) {
+            int newCount = items[id] + count;
+            if (newCount > data.maxStack) return false;
+            items[id] = newCount;
+        } else {
+            if (items.Count >= capacity) return false;
+            items[id] = count;
+        }
+        OnInventoryChanged?.Invoke();
+        return true;
+    }
+
+    public bool RemoveItem(string id, int count = 1) {
+        if (!items.ContainsKey(id) || items[id] < count) return false;
+        items[id] -= count;
+        if (items[id] <= 0) items.Remove(id);
+        OnInventoryChanged?.Invoke();
+        return true;
+    }
+
+    public int GetCount(string id) => items.TryGetValue(id, out int c) ? c : 0;
+}`;
+  }
+
+  function makeInventoryGD() {
+    return `# InventorySystem.gd — Godot 4
+class_name InventorySystem
+extends Node
+
+signal inventory_changed
+
+@export var capacity: int = 24
+var items: Dictionary = {}
+var database: Dictionary = {}
+
+func register_item(data: Dictionary) -> void:
+    database[data.id] = data
+
+func add_item(id: String, count: int = 1) -> bool:
+    if not database.has(id):
+        return false
+    var data = database[id]
+    if items.has(id):
+        var new_count = items[id] + count
+        if new_count > data.get("max_stack", 1):
+            return false
+        items[id] = new_count
+    else:
+        if items.size() >= capacity:
+            return false
+        items[id] = count
+    inventory_changed.emit()
+    return true
+
+func remove_item(id: String, count: int = 1) -> bool:
+    if not items.has(id) or items[id] < count:
+        return false
+    items[id] -= count
+    if items[id] <= 0:
+        items.erase(id)
+    inventory_changed.emit()
+    return true
+
+func get_count(id: String) -> int:
+    return items.get(id, 0)`;
+  }
+
+  function makeQuestCS() {
+    return `// QuestManager.cs — Unity
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+[System.Serializable]
+public class QuestObjective {
+    public string id;
+    public string description;
+    public int targetCount = 1;
+    public int currentCount;
+    public bool IsComplete => currentCount >= targetCount;
+}
+
+[System.Serializable]
+public class QuestData {
+    public string id;
+    public string title;
+    public string description;
+    public List<QuestObjective> objectives = new();
+    public bool isCompleted;
+    public bool isActive;
+}
+
+public class QuestManager : MonoBehaviour {
+    public static QuestManager Instance { get; private set; }
+    private Dictionary<string, QuestData> quests = new();
+    public event Action<QuestData> OnQuestUpdated;
+
+    void Awake() {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    public void RegisterQuest(QuestData quest) => quests[quest.id] = quest;
+
+    public void StartQuest(string id) {
+        if (!quests.ContainsKey(id)) return;
+        var q = quests[id];
+        q.isActive = true;
+        OnQuestUpdated?.Invoke(q);
+    }
+
+    public void ReportProgress(string objectiveId, int amount = 1) {
+        foreach (var q in quests.Values) {
+            if (!q.isActive || q.isCompleted) continue;
+            foreach (var obj in q.objectives) {
+                if (obj.id == objectiveId && !obj.IsComplete) {
+                    obj.currentCount = Mathf.Min(obj.currentCount + amount, obj.targetCount);
+                    CheckCompletion(q);
+                    OnQuestUpdated?.Invoke(q);
+                    return;
+                }
+            }
+        }
+    }
+
+    void CheckCompletion(QuestData q) {
+        foreach (var obj in q.objectives)
+            if (!obj.IsComplete) return;
+        q.isCompleted = true;
+        q.isActive = false;
+    }
+}`;
+  }
+
+  function makePlayerGD() {
+    return `# PlayerController.gd — Godot 4 (2D Platformer)
+extends CharacterBody2D
+
+@export var speed: float = 200.0
+@export var jump_velocity: float = -350.0
+@export var gravity: float = 900.0
+
+func _physics_process(delta: float) -> void:
+    if not is_on_floor():
+        velocity.y += gravity * delta
+
+    if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+        velocity.y = jump_velocity
+
+    var direction = Input.get_axis("ui_left", "ui_right")
+    if direction:
+        velocity.x = direction * speed
+    else:
+        velocity.x = move_toward(velocity.x, 0, speed)
+
+    move_and_slide()`;
+  }
+
+  function makeReadme(name, d) {
+    const engine = d.godot ? "Godot 4" : "Unity";
+    return `# ${name}
+
+Инди-игра, созданная с помощью VÆRIX AI.
+
+## Описание
+${d.stalker ? "Атмосферный survival-шутер в духе S.T.A.L.K.E.R. Исследуйте аномалии, собирайте артефакты, выполняйте заказы и выживайте в Зоне." :
+  d.platformer ? "Динамичный 2D-платформер с точным контролем персонажа." :
+  d.rpg ? "RPG с прокачкой, квестами и исследованием мира." :
+  "Игровой проект на базе " + engine + "."}
+
+## Стек
+- Движок: ${engine}
+- Язык: ${d.godot ? "GDScript" : "C#"}
+
+## Как запустить
+1. Откройте проект в ${engine}
+2. Откройте сцену MainMenu / GameWorld
+3. Нажмите Play
+
+---
+Сгенерировано в VÆRIX AI · Бесплатный режим`;
+  }
+
+  function makeStalkerPlan(name) {
+    return `# План игры «${name}» в духе S.T.A.L.K.E.R.
+
+## Концепция
+Игрок — сталкер, исследующий Зону отчуждения. Цель — выжить, выполнять заказы, находить артефакты и раскрывать тайны Зоны.
+
+## Основные механики
+1. Выживание — голод, жажда, радиация, здоровье
+2. Инвентарь — вес, слоты, разборка предметов
+3. Артефакты — положительные и отрицательные эффекты
+4. Аномалии — зоны опасности, детекция болтом
+5. NPC и фракции — репутация, торговцы, квесты
+6. Боёвка — оружие, отдача, износ, стелс
+
+## Структура актов
+- Акт 1: Кордон — обучение, первые заказы
+- Акт 2: Свалка / Тёмная Долина — фракции
+- Акт 3: Центр Зоны — сюжетная развязка
+
+## Технический стек
+- Unity 6 + C#  или  Godot 4 + GDScript
+- Начать с вертикального среза: движение + инвентарь + одна аномалия + один квест
+
+## Первые файлы
+1. GameManager
+2. PlayerController + PlayerStats
+3. InventorySystem + ItemData
+4. RadiationSystem
+5. Сцена «Кордон»
+
+Напишите, с какой системы начнём — сразу сгенерирую код.`;
+  }
+
+  async function generate(userText, agent) {
+    const d = detect(userText);
+    const name = inventName(d);
+    let reply = "";
+    let filesToCreate = [];
+    const prefix = agent ? `🤖 ${agent.name}\n\n` : "";
+
+    if (d.stalker && (d.structure || /план|сдел|созда/i.test(userText))) {
+      reply = prefix + makeStalkerPlan(name);
+      filesToCreate.push({ name: "GDD_Stalker.md", content: makeStalkerPlan(name) });
+      filesToCreate.push({ name: "ProjectStructure.md", content: makeStructure(d, name) });
+    }
+    else if (d.inventory) {
+      if (d.godot) {
+        reply = prefix + "Готовая система инвентаря для Godot 4 (GDScript):\n\n```gdscript\n" + makeInventoryGD() + "\n```\n\nФайл добавлен — можете скачать.";
+        filesToCreate.push({ name: "InventorySystem.gd", content: makeInventoryGD() });
+      } else {
+        reply = prefix + "Готовая система инвентаря для Unity (C#):\n\n```csharp\n" + makeInventoryCS() + "\n```\n\nФайл добавлен — можете скачать.";
+        filesToCreate.push({ name: "InventorySystem.cs", content: makeInventoryCS() });
+      }
+    }
+    else if (d.quest) {
+      reply = prefix + "Система квестов для Unity (C#):\n\n```csharp\n" + makeQuestCS() + "\n```";
+      filesToCreate.push({ name: "QuestManager.cs", content: makeQuestCS() });
+    }
+    else if (d.platformer || (d.godot && /игрок|player|контроллер/i.test(userText))) {
+      reply = prefix + "Контроллер игрока для Godot 4 (2D-платформер):\n\n```gdscript\n" + makePlayerGD() + "\n```";
+      filesToCreate.push({ name: "PlayerController.gd", content: makePlayerGD() });
+    }
+    else if (d.readme) {
+      const content = makeReadme(name, d);
+      reply = prefix + "README.md:\n\n```markdown\n" + content + "\n```";
+      filesToCreate.push({ name: "README.md", content });
+    }
+    else if (d.structure || /план|сдел.*игр|созда.*игр|project/i.test(userText)) {
+      reply = prefix + makeStructure(d, name) + "\n\n---\nМогу сразу сгенерировать код любой системы. Напишите, с чего начнём.";
+      filesToCreate.push({ name: "ProjectStructure.md", content: makeStructure(d, name) });
+    }
+    else if (d.save) {
+      reply = prefix + `Система сохранений (Unity C#):
+
+\`\`\`csharp
+using UnityEngine;
+using System.IO;
+
+public static class SaveSystem {
+    static string Path => Application.persistentDataPath + "/save.json";
+    public static void Save(object data) {
+        File.WriteAllText(Path, JsonUtility.ToJson(data, true));
+    }
+    public static T Load<T>() where T : class {
+        if (!File.Exists(Path)) return null;
+        return JsonUtility.FromJson<T>(File.ReadAllText(Path));
+    }
+}
+\`\`\``;
+    }
+    else if (/привет|здравст|hello|hi\b/i.test(userText)) {
+      reply = prefix + "Привет! Я VÆRIX Engine — бесплатный режим.\n\nМогу создавать планы игр, код систем (инвентарь, квесты, игрок), структуры проектов и файлы для Unity / Godot.\n\nОпишите игру или попросите конкретную систему.";
+    }
+    else if (/кто ты|что ты|возможн/i.test(userText)) {
+      reply = prefix + "Я VÆRIX Engine — бесплатный локальный движок.\n\nУмею:\n• Планы и структуры проектов (в т.ч. S.T.A.L.K.E.R.)\n• Системы: инвентарь, квесты, сохранения, игрок\n• Код под Unity (C#) и Godot (GDScript)\n• README / GDD\n\nПросто опишите, что нужно.";
+    }
+    else {
+      reply = prefix + `Принял: «${userText.slice(0, 100)}${userText.length > 100 ? "…" : ""}»
+
+В бесплатном режиме лучше всего умею:
+• Планы и структуры (S.T.A.L.K.E.R. и др.)
+• Инвентарь, квесты, сохранения, игрок
+• Код Unity (C#) / Godot (GDScript)
+• README / GDD
+
+Уточните движок и что именно нужно — сразу сгенерирую.`;
+    }
+
+    await new Promise(r => setTimeout(r, 350 + Math.random() * 500));
+    return { text: reply, files: filesToCreate };
+  }
+
+  return { generate };
+})();
+
+/* ── Paid API streaming ─────────────────────────────── */
+async function streamChat(messages, system, onText, signal) {
+  const key = (apiKeys[provider] || "").trim();
+  if (!key) throw { message: "Добавьте API-ключ во вкладке «API»." };
+
+  const prov = PROVIDERS[provider];
+  const model = targetInfo().model;
+  const res = await fetch(prov.endpoint, {
+    method: "POST",
+    headers: prov.headers(key),
+    body: JSON.stringify(prov.body(model, messages, system)),
+    signal
+  });
+
+  if (!res.ok) {
+    let errText = "";
+    try { errText = await res.text(); } catch(_) {}
+    if (res.status === 401) throw { message: "Неверный API-ключ." };
+    if (res.status === 429) throw { message: "Лимит запросов. Подождите." };
+    throw { message: `Ошибка API (${res.status}): ${errText.slice(0, 160)}` };
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let full = "", buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed === "data: [DONE]") continue;
+      if (!trimmed.startsWith("data: ")) continue;
+      try {
+        const json = JSON.parse(trimmed.slice(6));
+        let delta = "";
+        if (provider === "anthropic") {
+          if (json.type === "content_block_delta" && json.delta?.text) delta = json.delta.text;
+        } else {
+          delta = json.choices?.[0]?.delta?.content || "";
+        }
+        if (delta) { full += delta; onText(full); }
+      } catch(_) {}
+    }
+  }
+  return full;
+}
+
+/* ── Send ───────────────────────────────────────────── */
+async function send() {
+  if (ctl) { ctl.abort(); return; }
+  const t = $("msg").value.trim();
+  if (!t) return;
+
+  const info = targetInfo();
+  const a = info.agent;
+
+  $("msg").value = "";
+  hist.push({ role: "user", content: t });
+  saveHistory();
+  bubble("user", t);
+  const out = bubble("ai", "…");
+  ctl = new AbortController();
+  const me = ctl;
+  $("send").textContent = "■";
+
+  try {
+    let text = "";
+
+    if (provider === "local") {
+      const result = await LocalEngine.generate(t, a);
+      text = result.text;
+      let i = 0;
+      await new Promise(resolve => {
+        const step = () => {
+          if (me.signal.aborted) { resolve(); return; }
+          i = Math.min(i + 14, text.length);
+          out.textContent = text.slice(0, i);
+          out.scrollIntoView({ block: "end" });
+          if (i < text.length) requestAnimationFrame(step);
+          else {
+            for (const f of result.files) addFile(f.name, f.content);
+            resolve();
+          }
+        };
+        step();
+      });
+    } else {
+      let system = $("sysprompt").value.trim();
+      if (a) {
+        system = (system ? system + "\n\n" : "") +
+          `Ты — субагент «${a.name}». ${a.description}\n\nИнструкции:\n${a.prompt}`;
+      }
+      const messages = hist.map(m => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.content
+      }));
+      text = await streamChat(messages, system || undefined, txt => {
+        out.textContent = txt;
+        out.scrollIntoView({ block: "end" });
+      }, me.signal);
+    }
+
+    if (text && text.trim()) out.textContent = text;
+    else out.remove();
+    hist.push({ role: "assistant", content: text || "(пусто)" });
+    saveHistory();
+  } catch (e) {
+    hist.pop();
+    saveHistory();
+    if (e.name === "AbortError" || me.signal.aborted) {
+      out.remove();
+      bubble("err", "Остановлено.");
+    } else {
+      out.remove();
+      bubble("err", e.message || "Не удалось получить ответ.");
+    }
+  }
+  ctl = null;
+  $("send").textContent = "➤";
+}
+
+$("send").onclick = send;
+$("msg").addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); }
+});
+
+/* ── Agents ─────────────────────────────────────────── */
+function renderAgents() {
+  $("agents").innerHTML = agents.map((a, i) =>
+    `<div class="card" data-i="${i}">
+      <label>Имя</label><input data-k="name" value="${esc(a.name)}">
+      <label>Когда вызывать</label><input data-k="description" value="${esc(a.description)}">
+      <label>Модель</label><select data-k="model">
+        <option value="inherit"${a.model === "inherit" ? " selected" : ""}>как в настройках</option>
+        ${(PROVIDERS[provider]?.models || []).map(m => `<option value="${m[0]}"${m[0] === a.model ? " selected" : ""}>${m[1]}</option>`).join("")}
+      </select>
+      <label>Инструменты</label><input data-k="tools" value="${esc(a.tools)}">
+      <label>Промпт</label><textarea class="mono" data-k="prompt">${esc(a.prompt)}</textarea>
+      <div class="row">
+        <button class="btn p" data-chat>💬 Дать задание</button>
+        <button class="btn danger" data-del>Удалить</button>
+      </div>
+    </div>`
+  ).join("");
+}
+
+$("agents").addEventListener("input", e => {
+  const k = e.target.dataset.k;
+  if (k) agents[e.target.closest(".card").dataset.i][k] = e.target.value;
+});
+$("agents").addEventListener("click", e => {
+  const c = e.target.closest(".card");
+  if (!c) return;
+  const i = +c.dataset.i;
+  if (e.target.closest("[data-del]")) { agents.splice(i, 1); renderAgents(); }
+  if (e.target.closest("[data-chat]")) { target = "a:" + i; resetChat(); show("chat"); $("msg").focus(); }
+});
+$("add").onclick = () => {
+  agents.push({ name: "new-agent", description: "Опишите задачу агента", model: "inherit", tools: "", prompt: "Опишите поведение агента." });
+  renderAgents();
+};
+
+/* ── Connection ─────────────────────────────────────── */
+function updateConnUI() {
+  const hdr = $("hdr-conn"), line = $("conn-status-line");
+  const txt = $("conn-status-text"), hdrTxt = $("hdr-conn-text");
+  const proj = $("project-card"), btnC = $("btn-connect"), btnD = $("btn-disconnect");
+  if (connected) {
+    hdr.classList.add("online"); line.classList.add("online");
+    txt.textContent = "Подключено · Windows";
+    hdrTxt.textContent = "Подключено";
+    proj.style.display = "block"; btnC.style.display = "none"; btnD.style.display = "inline-flex";
+  } else {
+    hdr.classList.remove("online"); line.classList.remove("online");
+    txt.textContent = "Ожидание подключения…";
+    hdrTxt.textContent = "Не подключено";
+    proj.style.display = "none"; btnC.style.display = "inline-flex"; btnD.style.display = "none";
+  }
+}
+$("btn-connect").onclick = () => {
+  connected = true; updateConnUI();
+  $("build-log").innerHTML = '<div class="ok">✓ Агент-помощник подключён</div><div class="info">// Готов к работе</div>';
+};
+$("btn-disconnect").onclick = () => {
+  connected = false; updateConnUI();
+  $("build-log").innerHTML = '<div class="info">// Лог сборки появится здесь после подключения</div>';
+};
+$("btn-browse").onclick = () => {
+  const paths = ["C:\\Games\\MyStalkerLike", "C:\\Users\\User\\Documents\\UnityProjects\\NewGame", "D:\\Dev\\Godot\\SurvivalGame"];
+  $("project-path").value = paths[Math.floor(Math.random() * paths.length)];
+};
+$("toggle-auto").onclick = function() { autoMode = !autoMode; this.classList.toggle("on", autoMode); };
+$("toggle-safe").onclick = function() { safeMode = !safeMode; this.classList.toggle("on", safeMode); };
+
+function appendBuild(msg, cls = "info") {
+  const log = $("build-log");
+  const d = document.createElement("div");
+  d.className = cls; d.textContent = msg;
+  log.appendChild(d); log.scrollTop = log.scrollHeight;
+}
+$("btn-build").onclick = () => {
+  if (!connected) { appendBuild("× Сначала подключите компьютер", "err"); return; }
+  appendBuild("> Сборка проекта…", "info");
+  setTimeout(() => appendBuild("✓ Сборка успешно завершена", "ok"), 900);
+};
+$("btn-run").onclick = () => {
+  if (!connected) { appendBuild("× Сначала подключите компьютер", "err"); return; }
+  appendBuild("> Запуск…", "info");
+  setTimeout(() => appendBuild("✓ Процесс запущен", "ok"), 700);
+};
+$("btn-test").onclick = () => {
+  if (!connected) { appendBuild("× Сначала подключите компьютер", "err"); return; }
+  appendBuild("> Тесты…", "info");
+  setTimeout(() => appendBuild("✓ 12 passed, 0 failed", "ok"), 800);
+};
+
+/* ── Files ──────────────────────────────────────────── */
+function renderFiles() {
+  const box = $("fl");
+  box.innerHTML = "";
+  const sec = (t, items) => {
+    const h = document.createElement("h3"); h.textContent = t; box.appendChild(h);
+    items.forEach(([n, c, p]) => { const f = fileCard(n, c, p); f.classList.add("cfg"); box.appendChild(f); });
+  };
+  if (files.length) {
+    sec("Созданные в чате", files.map(f => [f.name, f.content]));
+  } else {
+    const p = document.createElement("p");
+    p.className = "hint";
+    p.textContent = "Файлы появятся здесь. Попросите: «создай систему инвентаря» или «сделай игру в духе S.T.A.L.K.E.R.».";
+    box.appendChild(p);
+  }
+  sec("Конфигурация VÆRIX AI", [
+    ["settings.json", settingsJson(), ".vaerix/settings.json"]
+  ].concat(agents.map(a => [(a.name || "agent") + ".md", agentMd(a), ".vaerix/agents/" + (a.name || "agent") + ".md"])));
+}
+
+refreshSettingsUI();
+renderAgents();
+loadHistory();
+updateConnUI();
+</script>
+</body>
+</html>
